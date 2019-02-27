@@ -1,8 +1,14 @@
-using ReadStat
+
+import LibXLS
 using Test
 
-@testset "LibXLS" begin
+const DATA_FOLDER = joinpath(@__DIR__, "..", "data")
+@assert isdir(DATA_FOLDER)
 
-@test 1==2
+fp_book1 = joinpath(DATA_FOLDER, "book1.xls")
+@assert isfile(fp_book1)
 
+@testset "open/close" begin
+    xls = LibXLS.openxls(fp_book1)
+    LibXLS.closexls(xls)
 end
