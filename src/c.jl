@@ -86,12 +86,36 @@ struct xlsWorkSheet
     colinfo::st_colinfo
 end
 
+@enum XLSError::UInt32 begin
+    LIBXLS_OK           = 0
+    LIBXLS_ERROR_OPEN   = 1
+    LIBXLS_ERROR_SEEK   = 2
+    LIBXLS_ERROR_READ   = 3
+    LIBXLS_ERROR_PARSE  = 4
+    LIBXLS_ERROR_MALLOC = 5
+end
+
 # xlsWorkBook *xls_open_file(const char *file, const char *charset, xls_error_t *outError);
 function xls_open_file(file::AbstractString, charset::AbstractString, error_ref::Ref{XLSError})
-    ccall((:xls_open_file, libxlsreader), Ptr{Cvoid}, (Cstring, Cstring, Ref{XLSError}), file, charset, error_ref)
+    ccall((:xls_open_file, libxlsreader), Ptr{xlsWorkBook}, (Cstring, Cstring, Ref{XLSError}), file, charset, error_ref)
 end
 
 # void xls_close_WB(xlsWorkBook* pWB);
-function xls_close_WB(workbook_handle::Ptr{Cvoid})
-    ccall((:xls_close_WB, libxlsreader), Cvoid, (Ptr{Cvoid},), workbook_handle)
+function xls_close_WB(workbook_handle::Ptr{xlsWorkBook})
+    ccall((:xls_close_WB, libxlsreader), Cvoid, (Ptr{xlsWorkBook},), workbook_handle)
+end
+
+# xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
+function xls_getWorkSheet(wb,num)
+    ret = ccall((:xls_getWorkSheet, libxlsreader), Ptr{xlsWorkSheet}, (Ptr{xlsWorkBook}, Cint), wb, num)
+end
+
+# xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
+function xls_summaryInfo(wb)
+    ret = ccall((:xls_summaryInfo, libxlsreader), Ptr{xls_summaryInfo}, (Ptr{xlsWorkBook},), wb)
+end
+
+# void xls_close_summaryInfo(xlsSummaryInfo *pSI);
+function xls_close_summaryInfo(si)
+    ccall((:xls_close_summaryInfo, libxlsreader), Cvoid, (Ptr{xls_summaryInfo},), si)
 end

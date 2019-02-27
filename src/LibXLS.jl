@@ -7,8 +7,8 @@ if !isfile(depsjl_path)
 end
 include(depsjl_path)
 
-include("types.jl")
 include("c.jl")
+include("types.jl")
 include("workbook.jl")
 
 end
