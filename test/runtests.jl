@@ -16,11 +16,24 @@ fp_book1_1904 = joinpath(DATA_FOLDER, "book1_1904.xls")
     LibXLS.closexls(xls)
 end
 
-@testset "is1904" begin
-    xls = LibXLS.openxls(fp_book1)
-    xls_1904 = LibXLS.openxls(fp_book1_1904)
-    @test !LibXLS.is1904(xls)
-    @test LibXLS.is1904(xls_1904)
-    LibXLS.closexls(xls)
-    LibXLS.closexls(xls_1904)
+@testset "workbook data" begin
+    LibXLS.openxls(fp_book1) do xls
+        @test !LibXLS.is1904(xls)
+        @test LibXLS.sheetcount(xls) == 2
+        @test LibXLS.sheetnames(xls) == [ "Plan1", "Plan2" ]
+        @test LibXLS.sheetname(xls, 1) == "Plan1"
+        @test LibXLS.sheetname(xls, 2) == "Plan2"
+        @test LibXLS.sheetindex(xls, "Plan1") == 1
+        @test LibXLS.sheetindex(xls, "Plan2") == 2
+
+        # returns false, is that really it?
+        #@test LibXLS.isvisible(xls, 1))
+        #@test LibXLS.isvisible(xls, "Plan1")
+    end
+
+    LibXLS.openxls(fp_book1_1904) do xls
+        @test LibXLS.is1904(xls)
+        @test LibXLS.sheetcount(xls) == 2
+        @test LibXLS.sheetnames(xls) == [ "Plan1", "Plan2" ]
+    end
 end
