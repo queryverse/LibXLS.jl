@@ -1,0 +1,9 @@
+name = "LibXLS"
+uuid = "0a7f3080-3a32-11e9-2990-37b7f3ecae53"
+authors = ["David Anthoff <anthoff@berkeley.edu>"]
+version = "0.0.1"
+
+[deps]
+BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

@@ -1,4 +1,4 @@
-using ReadStat
+
 using Test
 
 @testset "LibXLS" begin
