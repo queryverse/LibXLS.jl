@@ -10,4 +10,10 @@ end
 
 mutable struct XLSWorkBook
     handle::Ptr{Cvoid}
+
+    function XLSWorkBook(handle::Ptr{Cvoid})
+        new_wb = new(handle)
+        finalizer(closexls, new_wb)
+        return new_wb
+    end
 end

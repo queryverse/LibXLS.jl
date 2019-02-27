@@ -8,5 +8,7 @@ end
 include(depsjl_path)
 
 include("types.jl")
+include("c.jl")
+include("workbook.jl")
 
 end
