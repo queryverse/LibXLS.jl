@@ -21,7 +21,7 @@ struct xlsWorkBook
     activeSheetIdx:: UInt16 # index of the active sheet
 
     # Other data
-    codepage::UInt16	# Charset codepage
+    codepage::UInt16    # Charset codepage
     charset::Cstring
     sheets::st_sheet
     # sst::st_sst # SST table
@@ -29,8 +29,8 @@ struct xlsWorkBook
     # fonts::st_font
     # formats::st_format # FORMAT table
 
-	# summary::Cstring # ole file
-	# docSummary::Cstring # ole file
+    # summary::Cstring # ole file
+    # docSummary::Cstring # ole file
 end
 
 struct xls_summaryInfo
@@ -48,7 +48,7 @@ end
 
 struct st_row
     lastcol::UInt16 # numCols - 1
-    lastrow::UInt16	# numRows - 1
+    lastrow::UInt16 # numRows - 1
     row::Ptr{Nothing}
         # struct st_row_data
         # {
@@ -69,11 +69,11 @@ struct st_colinfo
     col::Ptr{Nothing}
         # struct st_colinfo_data
         # {
-        #     WORD	first;
-        #     WORD	last;
-        #     WORD	width;
-        #     WORD	xf;
-        #     WORD	flags;
+        #     WORD  first;
+        #     WORD  last;
+        #     WORD  width;
+        #     WORD  xf;
+        #     WORD  flags;
         # }
         # * col;
 end

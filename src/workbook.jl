@@ -15,3 +15,8 @@ function closexls(xls::XLSWorkBook)
         xls.handle = C_NULL
     end
 end
+
+function is1904(xls::XLSWorkBook)
+    p = reinterpret(Ptr{UInt8}, xls.handle) + sizeof(Ptr) + sizeof(Int32) + sizeof(Cuchar)
+    return Bool(unsafe_load(p))
+end
