@@ -1,21 +1,42 @@
 
-function openxls(filename::AbstractString) :: XLSWorkbook
-    @assert isfile(filename) "$filename not found."
+function openxls(filepath::AbstractString) :: XLSWorkbook
+    check_xls_file_format(filepath)
     error_ref = Ref{XLSError}()
-    handle = xls_open_file(filename, "UTF-8", error_ref)
+    handle = xls_open_file(filepath, "UTF-8", error_ref)
     if handle == C_NULL
         throw(error_ref[])
     end
     return XLSWorkbook(handle)
 end
 
-function openxls(f::Function, filename::AbstractString)
-    xls = openxls(filename)
+function openxls(f::Function, filepath::AbstractString)
+    xls = openxls(filepath)
 
     try
         f(xls)
     finally
         closexls(xls)
+    end
+end
+
+const XLS_FILE_HEADER = [ 0xd0, 0xcf, 0x11, 0xe0 ]
+const ZIP_FILE_HEADER = [ 0x50, 0x4b, 0x03, 0x04 ]
+
+function check_xls_file_format(filepath::AbstractString)
+    @assert isfile(filepath) "File $filepath not found."
+
+    local header::Vector{UInt8}
+
+    open(filepath, "r") do io
+        header = Base.read(io, 4)
+    end
+
+    if header == XLS_FILE_HEADER
+        return
+    elseif header == ZIP_FILE_HEADER
+        error("$filepath is either an Excel file in the new XLSX format, or a Zip file. This package does not support XLSX file format.")
+    else
+        error("$filepath is not a valid XLS file.")
     end
 end
 

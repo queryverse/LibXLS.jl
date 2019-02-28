@@ -11,9 +11,18 @@ fp_book1 = joinpath(DATA_FOLDER, "book1.xls")
 fp_book1_1904 = joinpath(DATA_FOLDER, "book1_1904.xls")
 @assert isfile(fp_book1_1904)
 
+fp_xlsx = joinpath(DATA_FOLDER, "blank.xlsx")
+@assert isfile(fp_xlsx)
+
 @testset "open/close" begin
-    xls = LibXLS.openxls(fp_book1)
-    LibXLS.closexls(xls)
+    @testset "Valid XLS file" begin
+        xls = LibXLS.openxls(fp_book1)
+        LibXLS.closexls(xls)
+    end
+
+    @testset "Invalid XLS file" begin
+        @test_throws ErrorException LibXLS.openxls(fp_xlsx)
+    end
 end
 
 @testset "workbook data" begin
