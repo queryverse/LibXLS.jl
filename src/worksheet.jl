@@ -12,5 +12,8 @@ function Worksheet(wb::Workbook, sheet_index::Integer)
     if handle == C_NULL
         error("Couldn't open Worksheet $sheet_index.")
     end
+
+    expect( xls_parseWorkSheet(handle) , "Failed parsing sheet $sheet_index" )
+
     return Worksheet(handle)
 end

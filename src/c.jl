@@ -96,6 +96,27 @@ end
     LIBXLS_ERROR_MALLOC = 5
 end
 
+@inline function expect(err::XLSError, msg::AbstractString)
+
+    local err_str::String = "unknown"
+
+    if err == LIBXLS_OK
+        return
+    elseif err == LIBXLS_ERROR_OPEN
+        err_str = "OPEN"
+    elseif err == LIBXLS_ERROR_SEEK
+        err_str = "SEEK"
+    elseif err == LIBXLS_ERROR_READ
+        err_str = "READ"
+    elseif err == LIBXLS_ERROR_PARSE
+        err_str = "PARSE"
+    elseif err == LIBXLS_ERROR_MALLOC
+        err_str = "MALLOC"
+    end
+
+    error(msg * " (operation $err_str)")
+end
+
 # xlsWorkBook *xls_open_file(const char *file, const char *charset, xls_error_t *outError);
 function xls_open_file(file::AbstractString, charset::AbstractString, error_ref::Ref{XLSError})
     ccall((:xls_open_file, libxlsreader), Ptr{xlsWorkBook}, (Cstring, Cstring, Ref{XLSError}), file, charset, error_ref)
@@ -114,6 +135,11 @@ end
 # void xls_close_WS(xlsWorkSheet* pWS);
 function xls_close_WS(worksheet_handle::Ptr{xlsWorkSheet})
     ccall((:xls_close_WS, libxlsreader), Cvoid, (Ptr{xlsWorkSheet},), worksheet_handle)
+end
+
+# xls_error_t xls_parseWorkSheet(xlsWorkSheet* pWS);
+function xls_parseWorkSheet(worksheet_handle::Ptr{xlsWorkSheet})
+    ccall((:xls_parseWorkSheet, libxlsreader), XLSError, (Ptr{xlsWorkSheet},), worksheet_handle)
 end
 
 # xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);

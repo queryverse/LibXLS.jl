@@ -50,5 +50,6 @@ end
 @testset "worksheet" begin
     LibXLS.openxls(fp_book1) do wb
         ws = wb["Plan2"]
+        LibXLS.close(ws)
     end
 end

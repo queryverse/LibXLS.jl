@@ -4,7 +4,9 @@ function openxls(filepath::AbstractString) :: Workbook
     error_ref = Ref{XLSError}()
     handle = xls_open_file(filepath, "UTF-8", error_ref)
     if handle == C_NULL
-        throw(error_ref[])
+        err = error_ref[]
+        @assert err != LIBXLS_OK # shouldn't happen
+        expect(err, "Error opening $filepath")
     end
     return Workbook(handle)
 end
@@ -75,5 +77,5 @@ end
 
 getworksheet(wb::Workbook, sheet_name::AbstractString) :: Worksheet = getworksheet(wb, sheetindex(wb, sheet_name))
 
-Base.getindex(wb::LibXLS.Workbook, sheet_index::Integer) = getworksheet(wb, sheet_index)
-Base.getindex(wb::LibXLS.Workbook, sheet_name::String) = getworksheet(wb, sheet_name)
+Base.getindex(wb::Workbook, sheet_index::Integer) = getworksheet(wb, sheet_index)
+Base.getindex(wb::Workbook, sheet_name::AbstractString) = getworksheet(wb, sheet_name)
