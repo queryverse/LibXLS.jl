@@ -1,3 +1,4 @@
+
 module LibXLS
 
 # Load libreadstat from our deps.jl
@@ -10,5 +11,6 @@ include(depsjl_path)
 include("c.jl")
 include("types.jl")
 include("workbook.jl")
+include("worksheet.jl")
 
 end
