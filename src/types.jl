@@ -1,4 +1,14 @@
 
+mutable struct Worksheet
+    handle::Ptr{xlsWorkSheet}
+
+    function Worksheet(handle::Ptr{xlsWorkSheet})
+        new_ws = new(handle)
+        finalizer(close, new_ws)
+        return new_ws
+    end
+end
+
 struct WorksheetInfo
     name::String
     isvisible::Bool
@@ -10,22 +20,23 @@ mutable struct Workbook
     charset::String
     sheets_info::Vector{WorksheetInfo}
     sheetname_index::Dict{String, Int}
+    sheets::Dict{Int, Worksheet}
 
     function Workbook(handle::Ptr{xlsWorkBook})
-        new_xls = new(handle, false, "", Vector{WorksheetInfo}(), Dict{String, Int}())
-        finalizer(closexls, new_xls)
+        new_wb = new(handle, false, "", Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
+        finalizer(close, new_wb)
 
         # parse c struct xlsWorkBook
         wb = unsafe_load(handle)
-        new_xls.is1904 = Bool(wb.is1904)
-        new_xls.charset = unsafe_string(wb.charset)
+        new_wb.is1904 = Bool(wb.is1904)
+        new_wb.charset = unsafe_string(wb.charset)
 
         for i in 1:wb.sheets.count
             sheet_data = unsafe_load(wb.sheets.sheet, i)
-            push!(new_xls.sheets_info, WorksheetInfo(unsafe_string(sheet_data.name), Bool(sheet_data.visibility)))
+            push!(new_wb.sheets_info, WorksheetInfo(unsafe_string(sheet_data.name), Bool(sheet_data.visibility)))
 
-            new_xls.sheetname_index[sheetname(new_xls, i)] = i
+            new_wb.sheetname_index[sheetname(new_wb, i)] = i
         end
-        return new_xls
+        return new_wb
     end
 end

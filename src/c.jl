@@ -107,8 +107,13 @@ function xls_close_WB(workbook_handle::Ptr{xlsWorkBook})
 end
 
 # xlsWorkSheet * xls_getWorkSheet(xlsWorkBook* pWB,int num);
-function xls_getWorkSheet(wb,num)
-    ret = ccall((:xls_getWorkSheet, libxlsreader), Ptr{xlsWorkSheet}, (Ptr{xlsWorkBook}, Cint), wb, num)
+function xls_getWorkSheet(workbook_handle::Ptr{xlsWorkBook}, num::Integer)
+    ret = ccall((:xls_getWorkSheet, libxlsreader), Ptr{xlsWorkSheet}, (Ptr{xlsWorkBook}, Cint), workbook_handle, num)
+end
+
+# void xls_close_WS(xlsWorkSheet* pWS);
+function xls_close_WS(worksheet_handle::Ptr{xlsWorkSheet})
+    ccall((:xls_close_WS, libxlsreader), Cvoid, (Ptr{xlsWorkSheet},), worksheet_handle)
 end
 
 # xlsSummaryInfo *xls_summaryInfo(xlsWorkBook* pWB);
