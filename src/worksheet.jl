@@ -15,5 +15,5 @@ function Worksheet(wb::Workbook, sheet_index::Integer)
 
     expect( xls_parseWorkSheet(handle) , "Failed parsing sheet $sheet_index" )
 
-    return Worksheet(handle)
+    return Worksheet(wb, handle)
 end

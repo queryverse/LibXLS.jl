@@ -49,7 +49,20 @@ end
 
 @testset "worksheet" begin
     LibXLS.openxls(fp_book1) do wb
-        ws = wb["Plan2"]
-        LibXLS.close(ws)
+        let
+            ws = wb["Plan2"]
+            LibXLS.close(ws)
+        end
+
+        let
+            ws = wb["Plan1"]
+            ws = wb[1]
+            ws = wb[2]
+        end
+
+        # testing bounds
+        @test_throws AssertionError wb["invalid_sheetname"]
+        @test_throws AssertionError wb[0]
+        @test_throws AssertionError wb[3]
     end
 end
