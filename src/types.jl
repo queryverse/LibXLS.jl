@@ -4,14 +4,14 @@ struct WorksheetInfo
     isvisible::Bool
 end
 
-mutable struct XLSWorkbook
+mutable struct Workbook
     handle::Ptr{xlsWorkBook}
     is1904::Bool
     charset::String
     sheets_info::Vector{WorksheetInfo}
     sheetname_index::Dict{String, Int}
 
-    function XLSWorkbook(handle::Ptr{xlsWorkBook})
+    function Workbook(handle::Ptr{xlsWorkBook})
         new_xls = new(handle, false, "", Vector{WorksheetInfo}(), Dict{String, Int}())
         finalizer(closexls, new_xls)
 

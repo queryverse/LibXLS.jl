@@ -1,12 +1,12 @@
 
-function openxls(filepath::AbstractString) :: XLSWorkbook
+function openxls(filepath::AbstractString) :: Workbook
     check_xls_file_format(filepath)
     error_ref = Ref{XLSError}()
     handle = xls_open_file(filepath, "UTF-8", error_ref)
     if handle == C_NULL
         throw(error_ref[])
     end
-    return XLSWorkbook(handle)
+    return Workbook(handle)
 end
 
 function openxls(f::Function, filepath::AbstractString)
@@ -40,22 +40,22 @@ function check_xls_file_format(filepath::AbstractString)
     end
 end
 
-function closexls(xls::XLSWorkbook)
+function closexls(xls::Workbook)
     if xls.handle != C_NULL
         xls_close_WB(xls.handle)
         xls.handle = C_NULL
     end
 end
 
-sheetcount(xls::XLSWorkbook) = length(xls.sheets_info)
-is1904(xls::XLSWorkbook) = xls.is1904
-sheetname(xls::XLSWorkbook, sheet_index::Integer) = xls.sheets_info[sheet_index].name
+sheetcount(xls::Workbook) :: Int = length(xls.sheets_info)
+is1904(xls::Workbook) :: Bool = xls.is1904
+sheetname(xls::Workbook, sheet_index::Integer) :: String = xls.sheets_info[sheet_index].name
 
-function sheetindex(xls::XLSWorkbook, sheet_name::AbstractString) :: Int
+function sheetindex(xls::Workbook, sheet_name::AbstractString) :: Int
     @assert sheet_name ∈ keys(xls.sheetname_index) "$sheet_name is not a valid sheet name."
     return xls.sheetname_index[sheet_name]
 end
 
-sheetnames(xls::XLSWorkbook) = [ sheetname(xls, i) for i in 1:sheetcount(xls) ]
-isvisible(xls::XLSWorkbook, sheet_index::Integer) = xls.sheets_info[sheet_index].isvisible
-isvisible(xls::XLSWorkbook, sheet_name::AbstractString) = isvisible(xls, sheetindex(xls, sheet_name))
+sheetnames(xls::Workbook) :: Vector{String} = [ sheetname(xls, i) for i in 1:sheetcount(xls) ]
+isvisible(xls::Workbook, sheet_index::Integer) :: Bool = xls.sheets_info[sheet_index].isvisible
+isvisible(xls::Workbook, sheet_name::AbstractString) :: Bool = isvisible(xls, sheetindex(xls, sheet_name))

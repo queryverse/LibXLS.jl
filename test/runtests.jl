@@ -36,8 +36,8 @@ end
         @test LibXLS.sheetindex(xls, "Plan2") == 2
 
         # returns false, is that really it?
-        #@test LibXLS.isvisible(xls, 1))
-        #@test LibXLS.isvisible(xls, "Plan1")
+        # @test LibXLS.isvisible(xls, 1))
+        # @test LibXLS.isvisible(xls, "Plan1")
     end
 
     LibXLS.openxls(fp_book1_1904) do xls
