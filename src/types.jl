@@ -1,9 +1,12 @@
 
-mutable struct Worksheet
+abstract type AbstractWorkbook end
+
+mutable struct Worksheet{W<:AbstractWorkbook}
+    parent::W
     handle::Ptr{xlsWorkSheet}
 
-    function Worksheet(handle::Ptr{xlsWorkSheet})
-        new_ws = new(handle)
+    function Worksheet(parent::W, handle::Ptr{xlsWorkSheet}) where {W<:AbstractWorkbook}
+        new_ws = new{W}(parent, handle)
         finalizer(close, new_ws)
         return new_ws
     end
@@ -14,7 +17,7 @@ struct WorksheetInfo
     isvisible::Bool
 end
 
-mutable struct Workbook
+mutable struct Workbook <: AbstractWorkbook
     handle::Ptr{xlsWorkBook}
     is1904::Bool
     charset::String
