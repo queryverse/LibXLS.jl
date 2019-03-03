@@ -52,7 +52,7 @@ struct st_cell_data
     row::UInt16
     col::UInt16
     xf::UInt16
-    str::Ptr{UInt8} # Cstring
+    str::Cstring
     d::Cdouble
     l::UInt32
     width::UInt16
