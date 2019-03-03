@@ -41,6 +41,18 @@ function check_test_data(matrix, test_data::Vector)
     nothing
 end
 
+function debug_cell_data(cell::LibXLS.st_cell_data)
+    println("Cell Data Debug")
+    println("record = ", cell.id)
+    println("xf = ", cell.xf)
+    if cell.str != C_NULL
+        println("str = ", unsafe_string(cell.str))
+    end
+
+    println("d = ", cell.d)
+    println("l = ", Int(cell.l))
+end
+
 @testset "Workbook" begin
 
     @testset "Valid XLS file" begin
@@ -112,7 +124,12 @@ end
 
             @test ws[2, 2] == 1
 
-            test_data = [ [ missing for i in 1:6], [ missing, 1, 2, 3, missing, 5], [ missing, 1000.1, 1000.2, 1000.3, missing, 1000.5 ]  ]
+            test_data = [ [missing for i in 1:6],
+                          [missing, 1, 2, 3, missing, 5],
+                          [missing, 1000.1, 1000.2, 1000.3, missing, 1000.5],
+                          [missing, "abc", "def", "ghi", missing, "xyz"],
+                          #[missing, Date(2018, 12, 1), Date(2018, 12, 31), Date(2019, 1, 1), missing, Date(2019, 2, 26)]
+                        ]
             check_test_data(ws, test_data)
         end
     end

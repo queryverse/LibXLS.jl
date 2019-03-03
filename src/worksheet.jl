@@ -52,7 +52,7 @@ function WorksheetRow(ws::Worksheet, row::Integer)
     return ws.worksheet_rows[row]
 end
 
-function cell_data(ws::Worksheet, row::Integer, col::Integer) :: st_cell_data
+function celldata(ws::Worksheet, row::Integer, col::Integer) :: st_cell_data
     check_valid_worksheet_column(ws, col)
     wsrow = WorksheetRow(ws, row)
 
@@ -66,13 +66,15 @@ function cell_data(ws::Worksheet, row::Integer, col::Integer) :: st_cell_data
 end
 
 function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
-    cell = cell_data(ws, row, column)
+    cell = celldata(ws, row, column)
     cell_record = XLSRecord(cell.id)
 
     if cell_record == XLS_RECORD_NUMBER || cell_record == XLS_RECORD_RK
         return cell.d
     elseif cell_record == XLS_RECORD_BLANK
         return missing
+    elseif cell_record == XLS_RECORD_LABELSST
+        return unsafe_string(cell.str)
     else
         error("Unsupported Record: $cell_record.")
     end
