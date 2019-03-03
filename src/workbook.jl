@@ -1,5 +1,7 @@
 
-function openxls(filepath::AbstractString) :: Workbook
+function Workbook(filepath::AbstractString)
+
+    # get a workbook handle
     check_xls_file_format(filepath)
     error_ref = Ref{XLSError}()
     handle = xls_open_file(filepath, "UTF-8", error_ref)
@@ -8,8 +10,25 @@ function openxls(filepath::AbstractString) :: Workbook
         @assert err != LIBXLS_OK # shouldn't happen
         expect(err, "Error opening $filepath")
     end
-    return Workbook(handle)
+
+    # creates workbook struct
+    new_wb = Workbook(handle, false, "", Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
+
+    # parse c struct xlsWorkBook to Workbook
+    xlswb = unsafe_load(handle)
+    new_wb.is1904 = Bool(xlswb.is1904)
+    new_wb.charset = unsafe_string(xlswb.charset)
+    for i in 1:xlswb.sheets.count
+        sheet_data = unsafe_load(xlswb.sheets.sheet, i)
+        push!(new_wb.sheets_info, WorksheetInfo(unsafe_string(sheet_data.name), Bool(sheet_data.visibility)))
+
+        new_wb.sheetname_index[sheetname(new_wb, i)] = i
+    end
+
+    return new_wb
 end
+
+openxls(filepath::AbstractString) :: Workbook = Workbook(filepath)
 
 function openxls(f::Function, filepath::AbstractString)
     wb = openxls(filepath)
@@ -53,12 +72,12 @@ sheetcount(wb::Workbook) :: Int = length(wb.sheets_info)
 is1904(wb::Workbook) :: Bool = wb.is1904
 sheetname(wb::Workbook, sheet_index::Integer) :: String = wb.sheets_info[sheet_index].name
 
-is_valid_sheetindex(wb::Workbook, sheet_index::Integer) = 0 < sheet_index <= sheetcount(wb)
-check_valid_sheetindex(wb::Workbook, sheet_index::Integer) = @assert is_valid_sheetindex(wb, sheet_index) "$sheet_index is not a valid sheet index."
-is_valid_sheetname(wb::Workbook, sheet_name::AbstractString) = sheet_name ∈ keys(wb.sheetname_index)
-check_valid_sheetname(wb::Workbook, sheet_name::AbstractString) = @assert is_valid_sheetname(wb, sheet_name) "$sheet_name is not a valid sheet name."
+@inline is_valid_sheetindex(wb::Workbook, sheet_index::Integer) = 0 < sheet_index <= sheetcount(wb)
+@inline check_valid_sheetindex(wb::Workbook, sheet_index::Integer) = @assert is_valid_sheetindex(wb, sheet_index) "$sheet_index is not a valid sheet index."
+@inline is_valid_sheetname(wb::Workbook, sheet_name::AbstractString) = sheet_name ∈ keys(wb.sheetname_index)
+@inline check_valid_sheetname(wb::Workbook, sheet_name::AbstractString) = @assert is_valid_sheetname(wb, sheet_name) "$sheet_name is not a valid sheet name."
 
-function sheetindex(wb::Workbook, sheet_name::AbstractString) :: Int
+@inline function sheetindex(wb::Workbook, sheet_name::AbstractString) :: Int
     check_valid_sheetname(wb, sheet_name)
     return wb.sheetname_index[sheet_name]
 end

@@ -47,22 +47,40 @@ struct xls_summaryInfo
     company::Cstring
 end
 
+struct st_cell_data
+    id::UInt16
+    row::UInt16
+    col::UInt16
+    xf::UInt16
+    str::Ptr{UInt8} # Cstring
+    d::Cdouble
+    l::UInt32
+    width::UInt16
+    colspan::UInt16
+    rowspan::UInt16
+    isHidden::Cuchar
+end
+
+struct st_cell
+    count::UInt32
+    cell::Ptr{st_cell_data}
+end
+
+struct st_row_data
+    index::UInt16
+    fcell::UInt16
+    lcell::UInt16
+    height::UInt16
+    flags::UInt16
+    xf::UInt16
+    xfflags::Cuchar
+    cells::st_cell
+end
+
 struct st_row
     lastcol::UInt16 # numCols - 1
     lastrow::UInt16 # numRows - 1
-    row::Ptr{Nothing}
-        # struct st_row_data
-        # {
-        #     WORD index;
-        #     WORD fcell;
-        #     WORD lcell;
-        #     WORD height;
-        #     WORD flags;
-        #     WORD xf;
-        #     BYTE xfflags;
-        #     st_cell cells;
-        # }
-        # * row;
+    row::Ptr{st_row_data}
 end
 
 struct st_colinfo
@@ -94,6 +112,51 @@ end
     LIBXLS_ERROR_READ   = 3
     LIBXLS_ERROR_PARSE  = 4
     LIBXLS_ERROR_MALLOC = 5
+end
+
+@enum XLSRecord::UInt16 begin
+    XLS_RECORD_EOF              = 0x000A
+    XLS_RECORD_DEFINEDNAME      = 0x0018
+    XLS_RECORD_NOTE             = 0x001C
+    XLS_RECORD_1904             = 0x0022
+    XLS_RECORD_CONTINUE         = 0x003C
+    XLS_RECORD_WINDOW1          = 0x003D
+    XLS_RECORD_CODEPAGE         = 0x0042
+    XLS_RECORD_OBJ              = 0x005D
+    XLS_RECORD_MERGEDCELLS      = 0x00E5
+    XLS_RECORD_DEFCOLWIDTH      = 0x0055
+    XLS_RECORD_COLINFO          = 0x007D
+    XLS_RECORD_BOUNDSHEET       = 0x0085
+    XLS_RECORD_PALETTE          = 0x0092
+    XLS_RECORD_MULRK            = 0x00BD
+    XLS_RECORD_MULBLANK         = 0x00BE
+    XLS_RECORD_DBCELL           = 0x00D7
+    XLS_RECORD_XF               = 0x00E0
+    XLS_RECORD_MSODRAWINGGROUP  = 0x00EB
+    XLS_RECORD_MSODRAWING       = 0x00EC
+    XLS_RECORD_SST              = 0x00FC
+    XLS_RECORD_LABELSST         = 0x00FD
+    XLS_RECORD_EXTSST           = 0x00FF
+    XLS_RECORD_TXO              = 0x01B6
+    XLS_RECORD_HYPERREF         = 0x01B8
+    XLS_RECORD_BLANK            = 0x0201
+    XLS_RECORD_NUMBER           = 0x0203
+    XLS_RECORD_LABEL            = 0x0204
+    XLS_RECORD_BOOLERR          = 0x0205
+    XLS_RECORD_STRING           = 0x0207 # only follows a formula
+    XLS_RECORD_ROW              = 0x0208
+    XLS_RECORD_INDEX            = 0x020B
+    XLS_RECORD_ARRAY            = 0x0221 # Array-entered formula
+    XLS_RECORD_DEFAULTROWHEIGHT = 0x0225
+    XLS_RECORD_FONT             = 0x0031 # spec says 0x0231 but Excel expects 0x0031
+    XLS_RECORD_FONT_ALT         = 0x0231
+    XLS_RECORD_WINDOW2          = 0x023E
+    XLS_RECORD_RK               = 0x027E
+    XLS_RECORD_STYLE            = 0x0293
+    XLS_RECORD_FORMULA          = 0x0006
+    XLS_RECORD_FORMULA_ALT      = 0x0406 # Apple Numbers bug
+    XLS_RECORD_FORMAT           = 0x041E
+    XLS_RECORD_BOF              = 0x0809
 end
 
 @inline function expect(err::XLSError, msg::AbstractString)
