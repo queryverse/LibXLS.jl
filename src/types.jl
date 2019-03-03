@@ -14,12 +14,13 @@ end
 
 mutable struct Worksheet{W<:AbstractWorkbook} <: AbstractWorksheet{W}
     parent::W
+    sheet_index::Int
     handle::Ptr{xlsWorkSheet}
     rows::st_row
     worksheet_rows::Dict{UInt16, WorksheetRow}
 
-    function Worksheet(parent::W, handle::Ptr{xlsWorkSheet}, rows::st_row) where {W<:AbstractWorkbook}
-        new_ws = new{W}(parent, handle, rows, Dict{UInt16, WorksheetRow}())
+    function Worksheet(parent::W, sheet_index::Int, handle::Ptr{xlsWorkSheet}, rows::st_row) where {W<:AbstractWorkbook}
+        new_ws = new{W}(parent, sheet_index, handle, rows, Dict{UInt16, WorksheetRow}())
         finalizer(close, new_ws)
         return new_ws
     end
