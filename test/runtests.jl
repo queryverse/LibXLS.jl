@@ -101,6 +101,12 @@ end
             @test size(wb[2]) == (4, 6)
         end
 
+        @testset "sheetname" begin
+            ws = wb[1]
+            @test LibXLS.sheetindex(ws) == 1
+            @test LibXLS.sheetname(ws) == "Plan1"
+        end
+
         @testset "row data" begin
             ws = wb["Plan1"]
 

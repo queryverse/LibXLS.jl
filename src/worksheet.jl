@@ -18,7 +18,7 @@ function Worksheet(wb::Workbook, sheet_index::Integer)
     # parse c struct xlsWorkBook
     xlsws = unsafe_load(handle)
 
-    return Worksheet(wb, handle, xlsws.rows)
+    return Worksheet(wb, sheet_index, handle, xlsws.rows)
 end
 
 @inline last_row_index(ws::Worksheet) = ws.rows.lastrow + 1
@@ -77,3 +77,6 @@ function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
         error("Unsupported Record: $cell_record.")
     end
 end
+
+sheetindex(ws::Worksheet) = ws.sheet_index
+sheetname(ws::Worksheet) = sheetname(ws.parent, sheetindex(ws))
