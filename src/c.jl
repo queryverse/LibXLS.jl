@@ -11,6 +11,16 @@ struct st_sheet
     sheet::Ptr{st_sheet_data}
 end
 
+struct st_sst
+    count::UInt32
+    lastid::UInt32
+    continued::UInt32
+    lastln::UInt32
+    lastrt::UInt32
+    lastsz::UInt32
+    str::Cstring
+end
+
 struct xlsWorkBook
     olestr::Ptr{Nothing}
     filepos::Int32 # position in file
@@ -25,7 +35,7 @@ struct xlsWorkBook
     codepage::UInt16    # Charset codepage
     charset::Cstring
     sheets::st_sheet
-    # sst::st_sst # SST table
+    sst::st_sst # SST table
     # xfs::st_xf # XF table
     # fonts::st_font
     # formats::st_format # FORMAT table
@@ -83,18 +93,17 @@ struct st_row
     row::Ptr{st_row_data}
 end
 
+struct st_colinfo_data
+    first::UInt16
+    last::UInt16
+    width::UInt16
+    xf::UInt16
+    flags::UInt16
+end
+
 struct st_colinfo
     count::UInt32 # Count of COLINFO
-    col::Ptr{Nothing}
-        # struct st_colinfo_data
-        # {
-        #     WORD  first;
-        #     WORD  last;
-        #     WORD  width;
-        #     WORD  xf;
-        #     WORD  flags;
-        # }
-        # * col;
+    col::Ptr{st_colinfo_data}
 end
 
 struct xlsWorkSheet
