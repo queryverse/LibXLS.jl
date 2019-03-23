@@ -16,4 +16,16 @@ include("date.jl")
 include("workbook.jl")
 include("worksheet.jl")
 
+if Sys.WORD_SIZE == 64
+    @assert sizeof(st_sheet) == 16
+    @assert sizeof(st_sheet_data) == 16
+    @assert sizeof(st_sst) == 32
+    @assert sizeof(st_cell_data) == 40
+    @assert sizeof(st_cell) == 16
+    @assert sizeof(st_row) == 16
+    @assert sizeof(st_row_data) == 32
+    @assert sizeof(st_colinfo) == 16
+    @assert sizeof(st_colinfo_data) == 10
+end
+
 end
