@@ -26,6 +26,12 @@ if Sys.WORD_SIZE == 64
     @assert sizeof(st_row_data) == 32
     @assert sizeof(st_colinfo) == 16
     @assert sizeof(st_colinfo_data) == 10
+    @assert sizeof(st_xf) == 16
+    @assert sizeof(st_xf_data) == 24
+    @assert sizeof(st_font_data) == 24
+    @assert sizeof(st_font) == 16
+    @assert sizeof(st_format_data) == 16
+    @assert sizeof(st_format) == 16
 end
 
 end
