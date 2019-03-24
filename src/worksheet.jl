@@ -15,7 +15,7 @@ function Worksheet(wb::Workbook, sheet_index::Integer)
 
     expect( xls_parseWorkSheet(handle) , "Failed parsing sheet $sheet_index" )
 
-    # parse c struct xlsWorkBook
+    # parse c struct xlsWorkSheet
     xlsws = unsafe_load(handle)
 
     return Worksheet(wb, sheet_index, handle, xlsws.rows)
