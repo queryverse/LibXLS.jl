@@ -21,6 +21,24 @@ struct st_sst
     str::Cstring
 end
 
+struct st_xf_data
+    font::UInt16
+    format::UInt16
+    type::UInt16
+    align::UInt8
+    rotation::UInt8
+    ident::UInt8
+    usedattr::UInt8
+    linestyle::UInt32
+    linecolor::UInt32
+    groundcolor::UInt16
+end
+
+struct st_xf
+    count::UInt32
+    xf_data::Ptr{st_xf_data}
+end
+
 struct xlsWorkBook
     olestr::Ptr{Nothing}
     filepos::Int32 # position in file
@@ -36,7 +54,7 @@ struct xlsWorkBook
     charset::Cstring
     sheets::st_sheet
     sst::st_sst # SST table
-    # xfs::st_xf # XF table
+    xfs::st_xf # XF table
     # fonts::st_font
     # formats::st_format # FORMAT table
 
