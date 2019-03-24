@@ -12,7 +12,7 @@ function Workbook(filepath::AbstractString)
     end
 
     # creates workbook struct
-    new_wb = Workbook(handle, false, "", Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
+    new_wb = Workbook(handle, false, "", Vector{st_xf_data}(), Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
 
     # parse c struct xlsWorkBook to Workbook
     xlswb = unsafe_load(handle)
@@ -23,6 +23,11 @@ function Workbook(filepath::AbstractString)
         push!(new_wb.sheets_info, WorksheetInfo(unsafe_string(sheet_data.name), Bool(sheet_data.visibility)))
 
         new_wb.sheetname_index[sheetname(new_wb, i)] = i
+    end
+
+    for i in 1:xlswb.xfs.count
+        xf_data = unsafe_load(xlswb.xfs.xf_data, i)
+        push!(new_wb.xfs, xf_data)
     end
 
     return new_wb
