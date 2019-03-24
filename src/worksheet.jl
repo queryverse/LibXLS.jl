@@ -65,12 +65,28 @@ function celldata(ws::Worksheet, row::Integer, col::Integer) :: st_cell_data
     return wsrow.cell_data[col]
 end
 
+xf(ws::Worksheet, cell::st_cell_data) = ws.parent.xfs[cell.xf]
+xf(ws::Worksheet, row::Integer, col::Integer) = xf(ws, celldata(ws, row, col))
+
+function is_date_format(ws::Worksheet, format::UInt16) :: Bool
+    if format == 1432 || (15 <= format <= 21) || format == 2232 || ( 45 <= format <= 47)
+        return true
+    end
+
+    return false
+end
+
 function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
     cell = celldata(ws, row, column)
     cell_record = XLSRecord(cell.id)
 
     if cell_record == XLS_RECORD_NUMBER || cell_record == XLS_RECORD_RK
-        return cell.d
+        cell_xf = xf(ws, cell)
+        if is_date_format(ws, cell_xf.format)
+            return parse_excel_date_or_datetime(cell.d, is1904(ws))
+        else
+            return cell.d
+        end
     elseif cell_record == XLS_RECORD_BLANK
         return missing
     elseif cell_record == XLS_RECORD_LABELSST
@@ -82,3 +98,4 @@ end
 
 sheetindex(ws::Worksheet) = ws.sheet_index
 sheetname(ws::Worksheet) = sheetname(ws.parent, sheetindex(ws))
+is1904(ws::Worksheet) = is1904(ws.parent)
