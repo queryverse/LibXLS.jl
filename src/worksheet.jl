@@ -65,12 +65,15 @@ function celldata(ws::Worksheet, row::Integer, col::Integer) :: st_cell_data
     return wsrow.cell_data[col]
 end
 
-function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
-    cell = celldata(ws, row, column)
+function cellvalue(ws::Worksheet, cell::st_cell_data)
     cell_record = XLSRecord(cell.id)
 
     if cell_record == XLS_RECORD_NUMBER || cell_record == XLS_RECORD_RK
-        return cell.d
+        if is_date_format(ws, cell)
+            return parse_excel_date_or_datetime(cell.d, is1904(ws))
+        else
+            return cell.d
+        end
     elseif cell_record == XLS_RECORD_BLANK
         return missing
     elseif cell_record == XLS_RECORD_LABELSST
@@ -80,5 +83,23 @@ function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
     end
 end
 
+function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
+    cell = celldata(ws, row, column)
+    return cellvalue(ws, cell)
+end
+
+function debugcell(ws::Worksheet, row::Integer, column::Integer)
+    cell = celldata(ws, row, column)
+    io = IOBuffer()
+    write(io, "[$(sheetname(ws))][$row,$column]\n")
+    write(io, "value $(cellvalue(ws, cell))\n")
+    write(io, "xf ")
+    show(io, xf(ws, cell))
+    write(io, "format $(cellformat(ws, cell))\n")
+    write(io, "inferred number format: $(number_format(ws, cell))")
+    println(String(take!(io)))
+end
+
 sheetindex(ws::Worksheet) = ws.sheet_index
 sheetname(ws::Worksheet) = sheetname(ws.parent, sheetindex(ws))
+is1904(ws::Worksheet) = is1904(ws.parent)
