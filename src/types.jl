@@ -1,4 +1,9 @@
 
+struct Format
+    index::UInt16
+    value::String
+end
+
 abstract type AbstractWorkbook end
 abstract type AbstractWorksheet{W<:AbstractWorkbook} end
 
@@ -36,12 +41,13 @@ mutable struct Workbook <: AbstractWorkbook
     is1904::Bool
     charset::String
     xfs::Vector{st_xf_data}
+    formats::Vector{Format}
     sheets_info::Vector{WorksheetInfo}
     sheetname_index::Dict{String, Int}
     sheets::Dict{Int, Worksheet}
 
-    function Workbook(handle::Ptr{xlsWorkBook}, is1904::Bool, charset::String, xfs::Vector{st_xf_data}, sheets_info::Vector{WorksheetInfo}, sheetname_index::Dict{String, Int}, sheets::Dict{Int, Worksheet})
-        new_wb = new(handle, is1904, charset, xfs, sheets_info, sheetname_index, sheets)
+    function Workbook(handle::Ptr{xlsWorkBook}, is1904::Bool, charset::String, xfs::Vector{st_xf_data}, formats::Vector{Format}, sheets_info::Vector{WorksheetInfo}, sheetname_index::Dict{String, Int}, sheets::Dict{Int, Worksheet})
+        new_wb = new(handle, is1904, charset, xfs, formats, sheets_info, sheetname_index, sheets)
         finalizer(close, new_wb)
         return new_wb
     end

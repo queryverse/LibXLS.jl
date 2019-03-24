@@ -39,6 +39,33 @@ struct st_xf
     xf_data::Ptr{st_xf_data}
 end
 
+struct st_font_data
+    height::UInt16
+    flag::UInt16
+    color::UInt16
+    bold::UInt16
+    escapement::UInt16
+    underline::UInt8
+    family::UInt8
+    charset::UInt8
+    name::Ptr{UInt8}
+end
+
+struct st_font
+    cound::UInt32
+    font_data::Ptr{st_font_data}
+end
+
+struct st_format_data
+    index::UInt16
+    value::Ptr{UInt8}
+end
+
+struct st_format
+    count::UInt32
+    format_data::Ptr{st_format_data}
+end
+
 struct xlsWorkBook
     olestr::Ptr{Nothing}
     filepos::Int32 # position in file
@@ -55,8 +82,8 @@ struct xlsWorkBook
     sheets::st_sheet
     sst::st_sst # SST table
     xfs::st_xf # XF table
-    # fonts::st_font
-    # formats::st_format # FORMAT table
+    fonts::st_font
+    formats::st_format # FORMAT table
 
     # summary::Cstring # ole file
     # docSummary::Cstring # ole file

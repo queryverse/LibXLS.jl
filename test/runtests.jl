@@ -1,6 +1,7 @@
 
 import LibXLS
 using Test
+using Dates
 
 const DATA_FOLDER = joinpath(@__DIR__, "..", "data")
 @assert isdir(DATA_FOLDER)

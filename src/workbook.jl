@@ -12,7 +12,7 @@ function Workbook(filepath::AbstractString)
     end
 
     # creates workbook struct
-    new_wb = Workbook(handle, false, "", Vector{st_xf_data}(), Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
+    new_wb = Workbook(handle, false, "", Vector{st_xf_data}(), Vector{Format}(), Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
 
     # parse c struct xlsWorkBook to Workbook
     xlswb = unsafe_load(handle)

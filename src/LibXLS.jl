@@ -1,6 +1,8 @@
 
 module LibXLS
 
+import Dates
+
 # Load libreadstat from our deps.jl
 const depsjl_path = joinpath(@__DIR__, "..", "deps", "deps.jl")
 if !isfile(depsjl_path)
@@ -10,6 +12,7 @@ include(depsjl_path)
 
 include("c.jl")
 include("types.jl")
+include("date.jl")
 include("workbook.jl")
 include("worksheet.jl")
 
