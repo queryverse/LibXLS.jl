@@ -6,3 +6,4 @@ deps/deps.jl
 *.jl.mem
 **/*.swp
 **/.~*
+Manifest.toml
