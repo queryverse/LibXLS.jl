@@ -21,6 +21,85 @@ struct st_sst
     str::Cstring
 end
 
+struct st_xf_data
+    font::UInt16
+    format::UInt16
+    type::UInt16
+    align::UInt8
+    rotation::UInt8
+    ident::UInt8
+    usedattr::UInt8
+    linestyle::UInt32
+    linecolor::UInt32
+    groundcolor::UInt16
+end
+
+@inline hasmask(val, mask) = val & mask == mask
+
+function Base.show(io::IO, xf::st_xf_data)
+
+    # ref http://www.openoffice.org/sc/excelfileformat.pdf
+    # usedattr -> XF_USED_ATTRIB, page 219
+    #     Each bit describes the validity of a specific group of attributes.
+    #     In cell XFs a cleared bit means the attributes of the
+    #     parent style XF are used (but only if the attributes are valid there),
+    #     a set bit means the attributes of this XF are used. In
+    #     style XFs a cleared bit means the attribute setting is valid,
+    #     a set bit means the attribute should be ignored
+    # index of parent XF -> XF Record Contents, page 221
+
+    print(io, """XF
+font: $(xf.font)
+format index: $(Int(xf.format))
+type: $(xf.type)
+    is locked: $( hasmask(xf.type, 0x0001) )
+    formula is hidden: $( hasmask(xf.type, 0x0002) )
+    cell XF: $( !hasmask(xf.type, 0x0004 ) )
+    style XF: $( hasmask(xf.type, 0x0004 ) )
+    has parent XF: $( xf.type >> 4 != 4095 )
+    index of parent XF: $( xf.type >> 4 )
+usedattr: $(xf.usedattr)
+    number format: $( hasmask(xf.usedattr, 0x01 ) )
+    font: $( hasmask(xf.usedattr, 0x02 ) )
+    alignment: $( hasmask(xf.usedattr, 0x04 ) )
+    border lines: $( hasmask(xf.usedattr, 0x08 ) )
+    background style: $( hasmask(xf.usedattr, 0x10 ) )
+    cell protection: $( hasmask(xf.usedattr, 0x20 ) )
+""")
+end
+
+struct st_xf
+    count::UInt32
+    xf_data::Ptr{st_xf_data}
+end
+
+struct st_font_data
+    height::UInt16
+    flag::UInt16
+    color::UInt16
+    bold::UInt16
+    escapement::UInt16
+    underline::UInt8
+    family::UInt8
+    charset::UInt8
+    name::Ptr{UInt8}
+end
+
+struct st_font
+    cound::UInt32
+    font_data::Ptr{st_font_data}
+end
+
+struct st_format_data
+    index::UInt16
+    value::Ptr{UInt8}
+end
+
+struct st_format
+    count::UInt32
+    format_data::Ptr{st_format_data}
+end
+
 struct xlsWorkBook
     olestr::Ptr{Nothing}
     filepos::Int32 # position in file
@@ -36,9 +115,9 @@ struct xlsWorkBook
     charset::Cstring
     sheets::st_sheet
     sst::st_sst # SST table
-    # xfs::st_xf # XF table
-    # fonts::st_font
-    # formats::st_format # FORMAT table
+    xfs::st_xf # XF table
+    fonts::st_font
+    formats::st_format # FORMAT table
 
     # summary::Cstring # ole file
     # docSummary::Cstring # ole file

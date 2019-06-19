@@ -1,6 +1,7 @@
 
 import LibXLS
 using Test
+using Dates
 
 const DATA_FOLDER = joinpath(@__DIR__, "..", "data")
 @assert isdir(DATA_FOLDER)
@@ -122,6 +123,13 @@ end
             @test LibXLS.sheetname(ws) == "Plan1"
         end
 
+        @testset "Date and DateTime" begin
+            ws = wb["Plan1"]
+            @test ws[2,3] ≈ 1000.1
+            @test ws[2,5] == Date(2018, 12, 01)
+            @test ws[2,6] == DateTime(2018, 12, 01, 12, 30)
+        end
+
         @testset "row data" begin
             let
                 ws = wb["Plan1"]
@@ -131,7 +139,7 @@ end
                               [missing, 1, 2, 3, missing, 5],
                               [missing, 1000.1, 1000.2, 1000.3, missing, 1000.5],
                               [missing, "abc", "def", "ghi", missing, "xyz"],
-                              #[missing, Date(2018, 12, 1), Date(2018, 12, 31), Date(2019, 1, 1), missing, Date(2019, 2, 26)]
+                              [missing, Date(2018, 12, 1), Date(2018, 12, 31), Date(2019, 1, 1), missing, Date(2019, 2, 26)]
                             ]
                 check_test_data(ws, test_data)
             end
