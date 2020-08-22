@@ -12,7 +12,7 @@ function Workbook(filepath::AbstractString)
     end
 
     # creates workbook struct
-    new_wb = Workbook(handle, false, "", Vector{WorksheetInfo}(), Dict{String, Int}(), Dict{Int, Worksheet}())
+    new_wb = Workbook(handle, false, "", Vector{WorksheetInfo}(), Dict{String,Int}(), Dict{Int,Worksheet}())
 
     # parse c struct xlsWorkBook to Workbook
     xlswb = unsafe_load(handle)
@@ -28,7 +28,7 @@ function Workbook(filepath::AbstractString)
     return new_wb
 end
 
-openxls(filepath::AbstractString) :: Workbook = Workbook(filepath)
+openxls(filepath::AbstractString)::Workbook = Workbook(filepath)
 
 function openxls(f::Function, filepath::AbstractString)
     wb = openxls(filepath)
@@ -68,25 +68,25 @@ function close(wb::Workbook)
     end
 end
 
-sheetcount(wb::Workbook) :: Int = length(wb.sheets_info)
-is1904(wb::Workbook) :: Bool = wb.is1904
-sheetname(wb::Workbook, sheet_index::Integer) :: String = wb.sheets_info[sheet_index].name
+sheetcount(wb::Workbook)::Int = length(wb.sheets_info)
+is1904(wb::Workbook)::Bool = wb.is1904
+sheetname(wb::Workbook, sheet_index::Integer)::String = wb.sheets_info[sheet_index].name
 
 @inline is_valid_sheetindex(wb::Workbook, sheet_index::Integer) = 0 < sheet_index <= sheetcount(wb)
 @inline check_valid_sheetindex(wb::Workbook, sheet_index::Integer) = @assert is_valid_sheetindex(wb, sheet_index) "$sheet_index is not a valid sheet index."
 @inline is_valid_sheetname(wb::Workbook, sheet_name::AbstractString) = sheet_name ∈ keys(wb.sheetname_index)
 @inline check_valid_sheetname(wb::Workbook, sheet_name::AbstractString) = @assert is_valid_sheetname(wb, sheet_name) "$sheet_name is not a valid sheet name."
 
-@inline function sheetindex(wb::Workbook, sheet_name::AbstractString) :: Int
+@inline function sheetindex(wb::Workbook, sheet_name::AbstractString)::Int
     check_valid_sheetname(wb, sheet_name)
     return wb.sheetname_index[sheet_name]
 end
 
-sheetnames(wb::Workbook) :: Vector{String} = [ sheetname(wb, i) for i in 1:sheetcount(wb) ]
-isvisible(wb::Workbook, sheet_index::Integer) :: Bool = wb.sheets_info[sheet_index].isvisible
-isvisible(wb::Workbook, sheet_name::AbstractString) :: Bool = isvisible(wb, sheetindex(wb, sheet_name))
+sheetnames(wb::Workbook)::Vector{String} = [ sheetname(wb, i) for i in 1:sheetcount(wb) ]
+isvisible(wb::Workbook, sheet_index::Integer)::Bool = wb.sheets_info[sheet_index].isvisible
+isvisible(wb::Workbook, sheet_name::AbstractString)::Bool = isvisible(wb, sheetindex(wb, sheet_name))
 
-function getworksheet(wb::Workbook, sheet_index::Integer) :: Worksheet
+function getworksheet(wb::Workbook, sheet_index::Integer)::Worksheet
     if sheet_index ∉ keys(wb.sheets)
         # add new sheet to buffer
         wb.sheets[sheet_index] = Worksheet(wb, sheet_index)
@@ -94,7 +94,7 @@ function getworksheet(wb::Workbook, sheet_index::Integer) :: Worksheet
     return wb.sheets[sheet_index]
 end
 
-getworksheet(wb::Workbook, sheet_name::AbstractString) :: Worksheet = getworksheet(wb, sheetindex(wb, sheet_name))
+getworksheet(wb::Workbook, sheet_name::AbstractString)::Worksheet = getworksheet(wb, sheetindex(wb, sheet_name))
 
 Base.getindex(wb::Workbook, sheet_index::Integer) = getworksheet(wb, sheet_index)
 Base.getindex(wb::Workbook, sheet_name::AbstractString) = getworksheet(wb, sheet_name)

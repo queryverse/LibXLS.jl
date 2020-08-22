@@ -29,7 +29,7 @@ struct xlsWorkBook
     is5ver::Cuchar
     is1904::Cuchar
     type::UInt16
-    activeSheetIdx:: UInt16 # index of the active sheet
+    activeSheetIdx::UInt16 # index of the active sheet
 
     # Other data
     codepage::UInt16    # Charset codepage

@@ -95,7 +95,7 @@ end
 
                 # closing ws will cause segfault or errors
                 # on the remaining tests
-                #LibXLS.close(ws)
+                # LibXLS.close(ws)
             end
 
             let
@@ -131,7 +131,7 @@ end
                               [missing, 1, 2, 3, missing, 5],
                               [missing, 1000.1, 1000.2, 1000.3, missing, 1000.5],
                               [missing, "abc", "def", "ghi", missing, "xyz"],
-                              #[missing, Date(2018, 12, 1), Date(2018, 12, 31), Date(2019, 1, 1), missing, Date(2019, 2, 26)]
+                              # [missing, Date(2018, 12, 1), Date(2018, 12, 31), Date(2019, 1, 1), missing, Date(2019, 2, 26)]
                             ]
                 check_test_data(ws, test_data)
             end

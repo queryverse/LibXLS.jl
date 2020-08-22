@@ -13,7 +13,7 @@ function Worksheet(wb::Workbook, sheet_index::Integer)
         error("Couldn't open Worksheet $sheet_index.")
     end
 
-    expect( xls_parseWorkSheet(handle) , "Failed parsing sheet $sheet_index" )
+    expect(xls_parseWorkSheet(handle), "Failed parsing sheet $sheet_index")
 
     # parse c struct xlsWorkSheet
     xlsws = unsafe_load(handle)
@@ -37,7 +37,7 @@ const MAX_WORKSHEET_ROW_INDEX = typemax(UInt16)
 
 @inline check_valid_worksheet_column(ws::Worksheet, column::Integer) = @assert is_valid_worksheet_column(ws, column) "Worksheet column out of bounds: $column."
 @inline check_valid_worksheet_row(ws::Worksheet, row::Integer) = @assert is_valid_worksheet_row(ws, row) "Worksheet Row out of bounds: $row."
-Base.size(ws::Worksheet) = ( last_row_index(ws), last_column_index(ws) )
+Base.size(ws::Worksheet) = (last_row_index(ws), last_column_index(ws))
 
 function WorksheetRow(ws::Worksheet, row::Integer)
     check_valid_worksheet_row(ws, row)
@@ -52,7 +52,7 @@ function WorksheetRow(ws::Worksheet, row::Integer)
     return ws.worksheet_rows[row]
 end
 
-function celldata(ws::Worksheet, row::Integer, col::Integer) :: st_cell_data
+function celldata(ws::Worksheet, row::Integer, col::Integer)::st_cell_data
     check_valid_worksheet_column(ws, col)
     wsrow = WorksheetRow(ws, row)
 
