@@ -8,7 +8,7 @@ libxls_jll = "86717fa1-76ed-5f2d-aba0-009d7207923f"
 
 [compat]
 Dates = "1"
-julia = "1.12"
+julia = "1"
 libxls_jll = "1.6.2"
 
 [extras]
