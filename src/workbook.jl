@@ -28,15 +28,15 @@ function Workbook(filepath::AbstractString)
         end
     end
 
-    xf_isdate = Vector{Bool}(undef, xlswb.xfs.count)
+    xf_kind = Vector{CellFormatKind}(undef, xlswb.xfs.count)
     for i in 1:xlswb.xfs.count
         xf_data = unsafe_load(xlswb.xfs.xf, i)
-        xf_isdate[i] = is_date_format(xf_data.format, custom_formats)
+        xf_kind[i] = format_kind(xf_data.format, custom_formats)
     end
 
     charset = xlswb.charset == C_NULL ? "" : unsafe_string(xlswb.charset)
 
-    return Workbook(handle, xlswb.is1904 != 0, charset, sheets_info, sheetname_index, Dict{Int,Worksheet}(), xf_isdate)
+    return Workbook(handle, xlswb.is1904 != 0, charset, sheets_info, sheetname_index, Dict{Int,Worksheet}(), xf_kind)
 end
 
 """
@@ -79,6 +79,13 @@ function check_xls_file_format(filepath::AbstractString)
     end
 end
 
+"""
+    close(wb::Workbook)
+
+Close the workbook and release the resources held by the C library. Closing
+an already closed workbook does nothing. Worksheets obtained from the
+workbook must not be accessed afterwards.
+"""
 function Base.close(wb::Workbook)
     if wb.handle != C_NULL
         for ws in values(wb.sheets)
@@ -90,10 +97,34 @@ function Base.close(wb::Workbook)
     return nothing
 end
 
+"""
+    isopen(wb::Workbook)
+
+Whether the workbook has not been closed yet.
+"""
 Base.isopen(wb::Workbook) = wb.handle != C_NULL
 
+"""
+    sheetcount(wb::Workbook)
+
+The number of sheets in the workbook, including hidden and empty ones.
+"""
 sheetcount(wb::Workbook)::Int = length(wb.sheets_info)
+"""
+    is1904(wb::Workbook)
+
+Whether the workbook uses the 1904 date system (the default on classic Mac
+versions of Excel) rather than the 1900 date system. Cell values already
+account for this, so this is informational only.
+"""
 is1904(wb::Workbook)::Bool = wb.is1904
+"""
+    sheetname(wb::Workbook, sheet_index)
+    sheetname(ws::Worksheet)
+
+The name of the sheet with the given (1-based) index, or of the given
+worksheet.
+"""
 sheetname(wb::Workbook, sheet_index::Integer)::String = wb.sheets_info[sheet_index].name
 
 @inline is_valid_sheetindex(wb::Workbook, sheet_index::Integer) = 0 < sheet_index <= sheetcount(wb)
@@ -105,15 +136,38 @@ end
     is_valid_sheetname(wb, sheet_name) || error("$sheet_name is not a valid sheet name.")
 end
 
+"""
+    sheetindex(wb::Workbook, sheet_name)
+    sheetindex(ws::Worksheet)
+
+The (1-based) index of the sheet with the given name, or of the given
+worksheet.
+"""
 @inline function sheetindex(wb::Workbook, sheet_name::AbstractString)::Int
     check_valid_sheetname(wb, sheet_name)
     return wb.sheetname_index[sheet_name]
 end
 
+"""
+    sheetnames(wb::Workbook)
+
+The names of all sheets in the workbook, in sheet order.
+"""
 sheetnames(wb::Workbook)::Vector{String} = [sheetname(wb, i) for i in 1:sheetcount(wb)]
+"""
+    isvisible(wb::Workbook, sheet_index_or_name)
+
+Whether the sheet with the given index or name is visible (not hidden).
+"""
 isvisible(wb::Workbook, sheet_index::Integer)::Bool = wb.sheets_info[sheet_index].isvisible
 isvisible(wb::Workbook, sheet_name::AbstractString)::Bool = isvisible(wb, sheetindex(wb, sheet_name))
 
+"""
+    getworksheet(wb::Workbook, sheet_index_or_name) -> Worksheet
+
+Return the worksheet with the given (1-based) index or name, parsing it on
+first access. `wb[i]` and `wb["name"]` are shorthands for this function.
+"""
 function getworksheet(wb::Workbook, sheet_index::Integer)::Worksheet
     wb.handle == C_NULL && error("Workbook is closed.")
     if sheet_index ∉ keys(wb.sheets)

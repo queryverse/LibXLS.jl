@@ -50,10 +50,10 @@ mutable struct Workbook <: AbstractWorkbook
     sheets_info::Vector{WorksheetInfo}
     sheetname_index::Dict{String,Int}
     sheets::Dict{Int,Worksheet}
-    xf_isdate::Vector{Bool} # per XF record: does its number format denote a date/time?
+    xf_kind::Vector{CellFormatKind} # per XF record: does its number format denote a date and/or time?
 
-    function Workbook(handle::Ptr{xlsWorkBook}, is1904::Bool, charset::String, sheets_info::Vector{WorksheetInfo}, sheetname_index::Dict{String,Int}, sheets::Dict{Int,Worksheet}, xf_isdate::Vector{Bool})
-        new_wb = new(handle, is1904, charset, sheets_info, sheetname_index, sheets, xf_isdate)
+    function Workbook(handle::Ptr{xlsWorkBook}, is1904::Bool, charset::String, sheets_info::Vector{WorksheetInfo}, sheetname_index::Dict{String,Int}, sheets::Dict{Int,Worksheet}, xf_kind::Vector{CellFormatKind})
+        new_wb = new(handle, is1904, charset, sheets_info, sheetname_index, sheets, xf_kind)
         finalizer(close, new_wb)
         return new_wb
     end
