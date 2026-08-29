@@ -1,84 +1,89 @@
-
-function close(ws::Worksheet)
-    if ws.handle != C_NULL
-        xls_close_WS(ws.handle)
-        ws.handle = C_NULL
-    end
-end
-
 function Worksheet(wb::Workbook, sheet_index::Integer)
     check_valid_sheetindex(wb, sheet_index)
     handle = xls_getWorkSheet(wb.handle, sheet_index - 1)
     if handle == C_NULL
-        error("Couldn't open Worksheet $sheet_index.")
+        error("Couldn't open worksheet $sheet_index.")
     end
 
     expect(xls_parseWorkSheet(handle), "Failed parsing sheet $sheet_index")
 
-    # parse c struct xlsWorkSheet
     xlsws = unsafe_load(handle)
 
-    return Worksheet(wb, sheet_index, handle, xlsws.rows)
+    return Worksheet(wb, sheet_index, handle, Int(xlsws.rows.lastrow) + 1, Int(xlsws.rows.lastcol) + 1)
 end
 
-@inline last_row_index(ws::Worksheet) = ws.rows.lastrow + 1
-@inline last_column_index(ws::Worksheet) = ws.rows.lastcol + 1
-
-const MAX_WORKSHEET_ROW_INDEX = typemax(UInt16)
-
-# See implementation of `xlsRow *xls_row(xlsWorkSheet* pWS, WORD cellRow)`
-@inline is_valid_worksheet_row(ws::Worksheet, row::Integer) = (
-    (row <= MAX_WORKSHEET_ROW_INDEX)
-    && (0 < row <= last_row_index(ws))
-    && ws.rows.row != C_NULL
-)
-
-@inline is_valid_worksheet_column(ws::Worksheet, column::Integer) = 0 < column <= last_column_index(ws)
-
-@inline check_valid_worksheet_column(ws::Worksheet, column::Integer) = @assert is_valid_worksheet_column(ws, column) "Worksheet column out of bounds: $column."
-@inline check_valid_worksheet_row(ws::Worksheet, row::Integer) = @assert is_valid_worksheet_row(ws, row) "Worksheet Row out of bounds: $row."
-Base.size(ws::Worksheet) = (last_row_index(ws), last_column_index(ws))
-
-function WorksheetRow(ws::Worksheet, row::Integer)
-    check_valid_worksheet_row(ws, row)
-
-    # adds to buffer if not present
-    if row ∉ keys(ws.worksheet_rows)
-        row_data = unsafe_load(ws.rows.row, row)
-        worksheet_row = WorksheetRow(ws, row_data)
-        ws.worksheet_rows[row] = worksheet_row
+function Base.close(ws::Worksheet)
+    if ws.handle != C_NULL
+        xls_close_WS(ws.handle)
+        ws.handle = C_NULL
     end
-
-    return ws.worksheet_rows[row]
+    return nothing
 end
 
-function celldata(ws::Worksheet, row::Integer, col::Integer)::st_cell_data
-    check_valid_worksheet_column(ws, col)
-    wsrow = WorksheetRow(ws, row)
-
-    if col ∉ keys(wsrow.cell_data)
-        cell_data_ptr = wsrow.row_data.cells.cell
-        cell_data = unsafe_load(cell_data_ptr, col)
-        wsrow.cell_data[col] = cell_data
-    end
-
-    return wsrow.cell_data[col]
-end
-
-function Base.getindex(ws::Worksheet, row::Integer, column::Integer)
-    cell = celldata(ws, row, column)
-    cell_record = XLSRecord(cell.id)
-
-    if cell_record == XLS_RECORD_NUMBER || cell_record == XLS_RECORD_RK
-        return cell.d
-    elseif cell_record == XLS_RECORD_BLANK
-        return missing
-    elseif cell_record == XLS_RECORD_LABELSST
-        return unsafe_string(cell.str)
-    else
-        error("Unsupported Record: $cell_record.")
-    end
-end
+Base.size(ws::Worksheet) = (ws.lastrow, ws.lastcol)
+Base.size(ws::Worksheet, dim::Integer) = size(ws)[dim]
 
 sheetindex(ws::Worksheet) = ws.sheet_index
 sheetname(ws::Worksheet) = sheetname(ws.parent, sheetindex(ws))
+
+function Base.show(io::IO, ws::Worksheet)
+    print(io, "LibXLS.Worksheet $(sheetname(ws)) ($(ws.lastrow)x$(ws.lastcol))")
+end
+
+"""
+    getindex(ws::Worksheet, row, col)
+
+Return the value of the cell at the (1-based) `row` and `col`. Depending on
+the cell this is a `Float64`, `String`, `Bool`, `DateTime`, `Time`,
+[`CellError`](@ref) or `missing` (for blank cells).
+"""
+function Base.getindex(ws::Worksheet, row::Integer, col::Integer)
+    ws.handle == C_NULL && error("Worksheet is closed.")
+    (1 <= row <= ws.lastrow && 1 <= col <= ws.lastcol) || throw(BoundsError(ws, (row, col)))
+
+    cell_ptr = xls_cell(ws.handle, row - 1, col - 1)
+    cell_ptr == C_NULL && return missing
+    cell = unsafe_load(cell_ptr)
+
+    id = cell.id
+    if id == UInt16(XLS_RECORD_BLANK)
+        return missing
+    elseif id == UInt16(XLS_RECORD_NUMBER) || id == UInt16(XLS_RECORD_RK)
+        return number_value(ws.parent, cell)
+    elseif id == UInt16(XLS_RECORD_LABELSST) || id == UInt16(XLS_RECORD_LABEL) || id == UInt16(XLS_RECORD_RSTRING)
+        return cell.str == C_NULL ? missing : unsafe_string(cell.str)
+    elseif id == UInt16(XLS_RECORD_BOOLERR)
+        # libxls stores the bool or error code in `d` and marks which one it
+        # is by setting `str` to "bool" or "error".
+        if cell_marker(cell) == "error"
+            return CellError(UInt8(round(Int, cell.d) & 0xff))
+        else
+            return cell.d != 0
+        end
+    elseif id == UInt16(XLS_RECORD_FORMULA) || id == UInt16(XLS_RECORD_FORMULA_ALT)
+        # For a numeric formula result libxls sets `l` to 0 and `d` to the
+        # value; otherwise `l` is 0xffff and `str` marks the result as
+        # "bool" or "error" (again with the value in `d`), or holds the
+        # string result itself.
+        if cell.l == 0
+            return number_value(ws.parent, cell)
+        else
+            marker = cell_marker(cell)
+            marker == "bool" && return cell.d != 0
+            marker == "error" && return CellError(UInt8(round(Int, cell.d) & 0xff))
+            return marker
+        end
+    else
+        error("Unsupported cell record 0x$(string(id, base = 16, pad = 4)) at ($row, $col).")
+    end
+end
+
+cell_marker(cell::st_cell_data) = cell.str == C_NULL ? "" : unsafe_string(cell.str)
+
+function number_value(wb::Workbook, cell::st_cell_data)
+    xf_index = Int(cell.xf) + 1
+    if xf_index <= length(wb.xf_isdate) && wb.xf_isdate[xf_index]
+        return excel_serial_to_temporal(cell.d, wb.is1904)
+    end
+    return cell.d
+end

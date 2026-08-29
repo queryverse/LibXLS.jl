@@ -8,3 +8,6 @@ deps/deps.jl
 **/.~*
 Manifest.toml
 .vscode
+docs/build/
+docs/Manifest.toml
+test-output*.*
