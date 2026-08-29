@@ -20,6 +20,11 @@ function Base.close(ws::Worksheet)
     return nothing
 end
 
+"""
+    size(ws::Worksheet[, dim])
+
+The dimensions of the used cell range of the worksheet, as (rows, columns).
+"""
 Base.size(ws::Worksheet) = (ws.lastrow, ws.lastcol)
 Base.size(ws::Worksheet, dim::Integer) = size(ws)[dim]
 
@@ -82,8 +87,11 @@ cell_marker(cell::st_cell_data) = cell.str == C_NULL ? "" : unsafe_string(cell.s
 
 function number_value(wb::Workbook, cell::st_cell_data)
     xf_index = Int(cell.xf) + 1
-    if xf_index <= length(wb.xf_isdate) && wb.xf_isdate[xf_index]
-        return excel_serial_to_temporal(cell.d, wb.is1904)
+    if xf_index <= length(wb.xf_kind)
+        kind = wb.xf_kind[xf_index]
+        if kind != FORMAT_NONE
+            return excel_serial_to_temporal(cell.d, kind, wb.is1904)
+        end
     end
     return cell.d
 end

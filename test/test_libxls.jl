@@ -1,30 +1,114 @@
+@testitem "C struct layout" begin
+    # The structs in c.jl mirror libxls's structs byte for byte; a mismatch
+    # means unsafe_load reads garbage. These are the sizes of the structs as
+    # compiled on all 64-bit platforms (idea from PR #15). 32-bit ABIs differ
+    # between operating systems, so no fixed sizes are asserted there.
+    if Sys.WORD_SIZE == 64
+        @test sizeof(LibXLS.st_sheet_data) == 16
+        @test sizeof(LibXLS.st_sheet) == 16
+        @test sizeof(LibXLS.st_font_data) == 24
+        @test sizeof(LibXLS.st_font) == 16
+        @test sizeof(LibXLS.st_format_data) == 16
+        @test sizeof(LibXLS.st_format) == 16
+        @test sizeof(LibXLS.st_xf_data) == 24
+        @test sizeof(LibXLS.st_xf) == 16
+        @test sizeof(LibXLS.str_sst_string) == 8
+        @test sizeof(LibXLS.st_sst) == 32
+        @test sizeof(LibXLS.st_cell_data) == 40
+        @test sizeof(LibXLS.st_cell) == 16
+        @test sizeof(LibXLS.st_row_data) == 32
+        @test sizeof(LibXLS.st_row) == 16
+        @test sizeof(LibXLS.st_colinfo_data) == 10
+        @test sizeof(LibXLS.st_colinfo) == 16
+        @test sizeof(LibXLS.xlsWorkBook) == 168
+        @test sizeof(LibXLS.xlsWorkSheet) == 48
+    end
+
+    # The version of the loaded C library must be the one the struct mirrors
+    # were written against.
+    @test startswith(LibXLS.xls_getVersion(), "1.6.")
+end
+
 @testitem "Error and format helpers" begin
     for (code, text) in Dict(0x00 => "#NULL!", 0x07 => "#DIV/0!", 0x17 => "#REF!", 0x2A => "#N/A", 0x1D => "#NAME?", 0x24 => "#NUM!", 0x0F => "#VALUE!")
         @test sprint(show, CellError(code)) == text
     end
     @test sprint(show, CellError(0x99)) == "#ERROR(153)!"
 
-    @test LibXLS.is_date_format_string("yyyy-mm-dd")
-    @test LibXLS.is_date_format_string("h:mm AM/PM")
-    @test LibXLS.is_date_format_string("[h]:mm:ss")
-    @test LibXLS.is_date_format_string("[Red]dd/mm/yyyy")
-    @test !LibXLS.is_date_format_string("General")
-    @test !LibXLS.is_date_format_string("0.00")
-    @test !LibXLS.is_date_format_string("#,##0.00")
-    @test !LibXLS.is_date_format_string("0.00E+00")
-    @test !LibXLS.is_date_format_string("\"m\"0.00")
-    @test !LibXLS.is_date_format_string("[Red]0.00")
+    using LibXLS: format_string_kind, format_kind, FORMAT_NONE, FORMAT_DATE, FORMAT_TIME, FORMAT_DATETIME
+
+    @test format_string_kind("yyyy-mm-dd") == FORMAT_DATE
+    @test format_string_kind("dd/mm") == FORMAT_DATE
+    @test format_string_kind("mmm") == FORMAT_DATE
+    @test format_string_kind("[Red]dd/mm/yyyy") == FORMAT_DATE
+    @test format_string_kind("h:mm") == FORMAT_TIME
+    @test format_string_kind("h:mm AM/PM") == FORMAT_TIME
+    @test format_string_kind("hh:mm:ss.000") == FORMAT_TIME
+    @test format_string_kind("[h]:mm:ss") == FORMAT_TIME
+    @test format_string_kind("mm:ss") == FORMAT_TIME
+    @test format_string_kind("yyyy-mm-dd hh:mm") == FORMAT_DATETIME
+    @test format_string_kind("d-mmm h:mm AM/PM") == FORMAT_DATETIME
+    @test format_string_kind("General") == FORMAT_NONE
+    @test format_string_kind("0.00") == FORMAT_NONE
+    @test format_string_kind("#,##0.00") == FORMAT_NONE
+    @test format_string_kind("0.00E+00") == FORMAT_NONE
+    @test format_string_kind("\"m\"0.00") == FORMAT_NONE
+    @test format_string_kind("\"unterminated") == FORMAT_NONE
+    @test format_string_kind("[Red]0.00") == FORMAT_NONE
+    @test format_string_kind("[unterminated") == FORMAT_NONE
+    @test format_string_kind("\\y0.00") == FORMAT_NONE
+    @test format_string_kind("_y0.00") == FORMAT_NONE
+    @test format_string_kind("*y0.00") == FORMAT_NONE
+
+    # builtin format ids, and FORMAT records taking precedence over them
+    @test format_kind(14, Dict{UInt16,String}()) == FORMAT_DATE
+    @test format_kind(19, Dict{UInt16,String}()) == FORMAT_TIME
+    @test format_kind(22, Dict{UInt16,String}()) == FORMAT_DATETIME
+    @test format_kind(46, Dict{UInt16,String}()) == FORMAT_TIME
+    @test format_kind(0, Dict{UInt16,String}()) == FORMAT_NONE
+    @test format_kind(164, Dict{UInt16,String}(0x00a4 => "yyyy-mm-dd")) == FORMAT_DATE
+    @test format_kind(14, Dict{UInt16,String}(0x000e => "0.00")) == FORMAT_NONE
 
     using Dates
-    @test LibXLS.excel_serial_to_temporal(42066.0, false) == DateTime(2015, 3, 3)
-    @test LibXLS.excel_serial_to_temporal(42039.4263888889, false) == DateTime(2015, 2, 4, 10, 14)
-    @test LibXLS.excel_serial_to_temporal(32242.0, false) == DateTime(1988, 4, 9)
-    @test LibXLS.excel_serial_to_temporal(0.626388888888889, false) == Time(15, 2, 0)
-    @test LibXLS.excel_serial_to_temporal(1.0, false) == DateTime(1900, 1, 1)
-    @test LibXLS.excel_serial_to_temporal(59.0, false) == DateTime(1900, 2, 28)
-    @test LibXLS.excel_serial_to_temporal(60.0, false) == DateTime(1900, 2, 28) # Excel's phantom 1900-02-29
-    @test LibXLS.excel_serial_to_temporal(61.0, false) == DateTime(1900, 3, 1)
-    @test LibXLS.excel_serial_to_temporal(1.0, true) == DateTime(1904, 1, 2)
+    using LibXLS: excel_serial_to_temporal
+
+    @test excel_serial_to_temporal(42066.0, FORMAT_DATE, false) == Date(2015, 3, 3)
+    @test excel_serial_to_temporal(42066.0, FORMAT_DATE, false) isa Date
+    @test excel_serial_to_temporal(42066.0, FORMAT_DATETIME, false) == DateTime(2015, 3, 3)
+    @test excel_serial_to_temporal(42066.0, FORMAT_DATETIME, false) isa DateTime
+    @test excel_serial_to_temporal(42039.4263888889, FORMAT_DATETIME, false) == DateTime(2015, 2, 4, 10, 14)
+    @test excel_serial_to_temporal(42039.4263888889, FORMAT_DATE, false) == DateTime(2015, 2, 4, 10, 14)
+    @test excel_serial_to_temporal(0.626388888888889, FORMAT_TIME, false) == Time(15, 2, 0)
+    @test excel_serial_to_temporal(0.626388888888889, FORMAT_DATETIME, false) == Time(15, 2, 0)
+    @test excel_serial_to_temporal(1.5416666666, FORMAT_TIME, false) == DateTime(1900, 1, 1, 13, 0)
+    @test excel_serial_to_temporal(1.0, FORMAT_DATE, false) == Date(1900, 1, 1)
+    @test excel_serial_to_temporal(59.0, FORMAT_DATE, false) == Date(1900, 2, 28)
+    @test excel_serial_to_temporal(60.0, FORMAT_DATE, false) == Date(1900, 2, 28) # Excel's phantom 1900-02-29
+    @test excel_serial_to_temporal(61.0, FORMAT_DATE, false) == Date(1900, 3, 1)
+    @test excel_serial_to_temporal(1.0, FORMAT_DATE, true) == Date(1904, 1, 2)
+    @test excel_serial_to_temporal(-1.0, FORMAT_DATE, false) == -1.0 # not a valid date
+    # sub-millisecond rounding carries over into the next day
+    @test excel_serial_to_temporal(0.99999999999, FORMAT_TIME, false) == DateTime(1900, 1, 1)
+
+    # C error reporting
+    @test LibXLS.xls_getError(LibXLS.LIBXLS_OK) isa String
+    @test !isempty(LibXLS.xls_getError(LibXLS.LIBXLS_ERROR_PARSE))
+    @test LibXLS.expect(LibXLS.LIBXLS_OK, "fine") === nothing
+    @test_throws ErrorException LibXLS.expect(LibXLS.LIBXLS_ERROR_READ, "boom")
+    err = try
+        LibXLS.expect(LibXLS.LIBXLS_ERROR_READ, "boom")
+    catch e
+        e
+    end
+    @test occursin("boom", err.msg)
+end
+
+@testitem "Corrupt files" begin
+    # A file with a valid OLE2 header that libxls cannot parse: the open
+    # itself must fail with the error reported by the C library.
+    path = joinpath(mktempdir(), "corrupt.xls")
+    write(path, vcat(LibXLS.XLS_FILE_HEADER, rand(UInt8, 100)))
+    @test_throws ErrorException openxls(path)
 end
 
 @testitem "Reading TestData.xls" begin
@@ -42,11 +126,15 @@ end
     @test_throws ErrorException LibXLS.sheetindex(wb, "No Such Sheet")
     @test !LibXLS.is1904(wb)
     @test LibXLS.isvisible(wb, 1)
+    @test LibXLS.isvisible(wb, "Sheet1")
+    @test sprint(show, wb) == "LibXLS.Workbook with 4 sheet(s)"
 
     ws = getworksheet(wb, "Sheet1")
     @test ws === wb["Sheet1"] === wb[1]
     @test size(ws, 1) >= 7
     @test size(ws, 2) >= 14
+    @test size(ws) == (size(ws, 1), size(ws, 2))
+    @test sprint(show, ws) == "LibXLS.Worksheet Sheet1 ($(size(ws, 1))x$(size(ws, 2)))"
 
     # Row 3 holds the headers, data starts at row 4; columns C (3) onwards.
     @test ws[1, 1] === missing
@@ -59,10 +147,13 @@ end
     @test ws[4, 5] === true
     @test ws[5, 5] isa Bool
     @test ws[6, 7] === missing              # "Mixed with NA" NA cell
-    @test ws[4, 11] == DateTime(2015, 3, 3) # "Some dates"
+    @test ws[4, 11] == Date(2015, 3, 3)     # "Some dates"
+    @test ws[4, 11] isa Date
     @test ws[5, 11] == DateTime(2015, 2, 4, 10, 14)
-    @test ws[6, 11] == DateTime(1988, 4, 9)
+    @test ws[5, 11] isa DateTime
+    @test ws[6, 11] == Date(1988, 4, 9)
     @test ws[7, 11] == Time(15, 2, 0)
+    @test ws[7, 11] isa Time
     @test ws[5, 12] == DateTime(1950, 8, 9, 18, 40)
     @test ws[7, 12] === missing             # "Dates with NA" NA cell
     @test ws[4, 13] isa CellError           # "Some errors"
@@ -81,9 +172,12 @@ end
     @test ws2[10, 6] === false
     @test ws2[13, 9] == Time(15, 2, 0)
 
+    @test isopen(wb)
     close(wb)
+    close(wb) # closing twice is fine
     @test !isopen(wb)
     @test_throws ErrorException getworksheet(wb, 1)
+    @test_throws ErrorException ws[4, 3]
 
     # do-block form closes the workbook
     result = openxls(filename) do wb2
@@ -138,12 +232,13 @@ end
 
         ws = wb["Plan1"]
         @test ws[2, 2] == 1
+        @test ws[2, 5] isa Date
         check_test_data(ws, [
             [missing for i in 1:6],
             [missing, 1, 2, 3, missing, 5],
             [missing, 1000.1, 1000.2, 1000.3, missing, 1000.5],
             [missing, "abc", "def", "ghi", missing, "xyz"],
-            [missing, DateTime(2018, 12, 1), DateTime(2018, 12, 31), DateTime(2019, 1, 1), missing, DateTime(2019, 2, 26)],
+            [missing, Date(2018, 12, 1), Date(2018, 12, 31), Date(2019, 1, 1), missing, Date(2019, 2, 26)],
         ])
 
         ws2 = wb["Plan2"]
@@ -163,7 +258,7 @@ end
         @test LibXLS.is1904(wb)
         @test sheetnames(wb) == ["Plan1", "Plan2"]
         ws = wb["Plan1"]
-        @test ws[2, 5] == DateTime(2018, 12, 1)
-        @test ws[4, 5] == DateTime(2019, 1, 1)
+        @test ws[2, 5] == Date(2018, 12, 1)
+        @test ws[4, 5] == Date(2019, 1, 1)
     end
 end
