@@ -262,3 +262,18 @@ end
         @test ws[4, 5] == Date(2019, 1, 1)
     end
 end
+
+@testitem "Empty Root Entry with a FREESECT start sector" begin
+    src = normpath(@__DIR__, "..", "data", "book1.xls")
+    fixture = normpath(@__DIR__, "EmptyRootEntry.xls")
+    openxls(src) do ref
+        openxls(fixture) do wb
+            @test sheetnames(wb) == sheetnames(ref)
+            for i in eachindex(sheetnames(ref))
+                a, b = getworksheet(ref, i), getworksheet(wb, i)
+                @test size(a) == size(b)
+                @test all(isequal(a[r, c], b[r, c]) for r in 1:size(a, 1), c in 1:size(a, 2))
+            end
+        end
+    end
+end
